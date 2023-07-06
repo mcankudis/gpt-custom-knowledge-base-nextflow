@@ -12,7 +12,6 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 def chat(input_text):
     storage_context = StorageContext.from_defaults(persist_dir = persist_dir)
     index = load_index_from_storage(storage_context)
-
     query_engine = index.as_chat_engine()
     response = query_engine.chat(input_text)
     return response.response
@@ -22,7 +21,7 @@ def main ():
     print("Type 'exit', 'bye', 'quit', or 'goodbye' to exit.")
 
     while True:
-        question = input("\nInput a question:")
+        question = input("\nInput a question: ")
         if  ["exit", "bye", "quit", "goodbye"].__contains__(question):
             print("Goodbye!")
             break

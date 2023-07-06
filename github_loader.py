@@ -3,10 +3,8 @@ from typing import Sequence
 
 import openai
 from dotenv import load_dotenv
-from langchain.chat_models import ChatOpenAI
 from llama_hub.github_repo import GithubClient, GithubRepositoryReader
-from llama_index import (GPTVectorStoreIndex, LLMPredictor, PromptHelper,
-                         download_loader)
+from llama_index import GPTVectorStoreIndex, download_loader
 from llama_index.schema import Document
 
 from config import (branch, concurrent_requests, filter_directories,
@@ -26,26 +24,14 @@ def load_documents() -> Sequence[Document]:
         repo                    = repo,
         filter_directories      = filter_directories,
         filter_file_extensions  = filter_file_extensions,
-        concurrent_requests     = concurrent_requests,
-        # verbose                 = True,
+        concurrent_requests     = concurrent_requests
     )
     
     return loader.load_data(branch = branch)
 
 
 def index_documents(documents: Sequence[Document]):
-    # max_input_size      = 4096
-    # num_outputs         = 512
-    # chunk_overlap_ratio = 0.05
-    # chunk_size_limit    = 600
-
-    # prompt_helper = PromptHelper(max_input_size, num_outputs, chunk_overlap_ratio, chunk_size_limit)
-    
-    # llm = ChatOpenAI(temperature = 0.1, model_name = "gpt-3.5-turbo", max_tokens = num_outputs)
-    # llm_predictor = LLMPredictor(llm)
-
     index = GPTVectorStoreIndex.from_documents(documents)
-
     index.storage_context.persist(persist_dir = persist_dir) 
 
 
