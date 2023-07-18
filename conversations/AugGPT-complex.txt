@@ -1,0 +1,135 @@
+=> User:
+    I am a scientist who process scans of old newspapers for later scientific text analysis. I would like to prepare a workflow for automatically preparing scans of newspapers for analysis by researchers. What is Nextflow?
+
+=> AugGPT:
+    Nextflow is a reactive workflow framework and a programming DSL that eases the writing of data-intensive computational pipelines. It is designed around the idea that the Linux platform is the lingua franca of data science, and it extends this approach by adding the ability to define complex program interactions and a high-level parallel computational environment based on the dataflow programming model. With Nextflow, users can write a pipeline once and seamlessly run it on their computer, a grid platform, or the cloud, without modifying it, by simply defining the target execution platform in the configuration file. This makes it possible to create data-driven computational pipelines for automatically preparing scans of newspapers for scientific text analysis.
+
+=> User:
+    What can I expect from a workflow built in Nextflow?
+
+=> AugGPT:
+    The benefits of using Nextflow to build a workflow include:
+
+    - Ability to define complex program interactions and a high-level parallel computational environment based on the dataflow programming model.
+    - Ability to write processes in any scripting language that can be executed by the Linux platform (Bash, Perl, Ruby, Python, etc.).
+    - Ability to seamlessly run a pipeline on a local computer, a grid platform, or the cloud, without modifying it.
+    - Support for multiple batch schedulers and cloud platforms.
+    - Minimal learning curve, without having to pick up a new programming language.
+    - Powerful scripting DSL based on the Groovy programming language.
+    - Ability to define pipeline configuration properties in a configuration file.
+
+=> User:
+    What should I specify and declare to prepare a scientific workflow in Nextflow?
+
+=> AugGPT:
+    To prepare a scientific workflow in Nextflow, one must declare the syntax version, define script parameters, create processes with input and output declarations, define a workflow with channels and process interactions, specify an executor, and configure the pipeline with a configuration file.
+
+=> User:
+    What needs to be defined so that ChatGPT can write a scientific workflow in Nextflow?
+
+=> AugGPT:
+    In order to write a scientific workflow in Nextflow, one must understand the concepts of processes, channels, executors, scripting language, and configuration options. Processes are written in any scripting language that can be executed by the Linux platform (Bash, Perl, Ruby, Python, etc.). Processes communicate with each other via asynchronous FIFO queues, called channels. The executor determines how the script is actually run on the target system. Nextflow scripting is an extension of the Groovy programming language. Finally, pipeline configuration properties are defined in a file named `nextflow.config` in the pipeline execution directory.
+
+=> User:
+    How detailed descriptions of individual tasks in the workflow I have to present to ChatGPT so that ChatGPT can prepare a scientific workflow in Nextflow?
+
+=> AugGPT:
+    To create a scientific workflow in Nextflow, you will need to provide ChatGPT with information about the tasks that need to be performed, the data that needs to be processed, and the desired output. You will also need to provide information about the executor to be used, the environment variables, and the pipeline parameters. Additionally, you will need to provide information about the scripting language to be used, such as Groovy, and the configuration options, such as the queue and executor.
+
+=> User:
+    Should I also list human tasks in my Nextflow-managed workflow tasks? 
+
+=> AugGPT:
+    Tasks to include in a Nextflow-managed workflow include: declaring parameters in the script, creating a Docker image containing the tools needed by the pipeline, defining environment variables in the nextflow.config file, granting execute permission to third-party scripts, and copying third-party scripts into a folder named bin/.
+
+=> User:
+    I need a scientific workflow in Nextflow for automatically prepares scans of newspapers for analysis by researchers and consists of the following steps and tasks:
+
+    Step 1: Downloading, collecting and basic check of files with images
+    Task 1:
+    * Description: Check if a new scan file has been made available on the webdav resource by the scanning authority
+    * Inputs: webdav repository adress and credentials
+    * Outputs: file name to be downloaded and its url
+    * Actions:
+    - connect to webdav resource
+    - check with your list of files already downloaded what files have been added
+    - for each newly added file pass its name and url to task 2 of step 1
+
+    Task 2:
+    * Description: Download image files
+    * Inputs: webdav repository adress and credentials, local repository address, filename and its url
+    * Outputs: updated list of downloaded files, downloaded filename
+    * Actions:
+    - connect to webdav resource.
+    - try to download file.
+    - if the download of the file was successful save the file in the local repository, save the filename, its local path and the "OK" message in the list of files already downloaded, forward filename to the task 3 queue.
+    - if the download of the file was not successful sleep 10 seconds and try to download it again.
+    - after 3 unsuccessful tries stop trying to download this file and save the filename and the "Error" message in the list of files already downloaded.
+        
+    Task 3:
+    * Description: Perform quality control analysis of downloaded file names
+    * Inputs: Queue of filenames
+    * Outputs:
+    - files with correct name go to the next task
+    - incorrect filenames are written to the task 3 error log
+    * Actions:
+    - for each file checking the correctness of the name (compliance with the pattern collection_name-year[four digit]-issue[four digits]-page_number[four digits].file_extension)                              
+    - if filename is correct forward path to the file to task 4.
+    - if the filename is invalid save its name to this task error log.
+
+    Task 4:
+    * Description: Check technical quality of image file
+    * Inputs: local path to the file
+    * Outputs:
+    * Actions:
+    - check with ImageMagick if image resolution is 300 or higher, if the image is not compressed
+    - if the image meets the technical conditions forward its local path to the queue of task 1 in step 2
+    - if the image does not meet the technical conditions save its name in this task error log.
+
+    Step 2: Checking the uniqueness of the images
+    This step starts when all files from step 1 have been processed.
+    Task 1:
+    * Description: Check for duplicate images among all files
+    * Inputs: Queue - list of image files
+    * Outputs:
+    - list of files with duplicate images
+    * Actions:
+    - for each image file check with python DuplicateRemover script if is there a duplicate image with a similarity level of 90% among other files
+    - if a duplicate is found, record the names of files with duplicated images in the log of this task.
+
+    End of steps and tasks.
+
+    Preferences:
+
+    1. Containerization: Please use Docker for encapsulating software dependencies and ensuring reproducibility.
+    2. Scalability: If possible, design the workflow to handle large-scale datasets and support parallel execution.
+
+=> AugGPT:
+    # Newspaper Scanning Workflow
+
+    nextflow.enable.dsl=2
+
+    // Script parameters
+    params.webdav_resource = "webdav_resource_url"
+    params.image_files = "image_files_url"
+
+    process downloadFiles {
+    input:
+        path webdav_resource
+    output:
+        path "downloaded_files.txt"
+
+        """
+        wget -r -np -nH --cut-dirs=3 --reject="index.html*" $webdav_resource
+        ls -1 > downloaded_files.txt
+        """
+    }
+
+    process checkFileNames {
+    input:
+        path downloaded_files
+    output:
+        path "checked_files.txt"
+
+        """
+        grep -E '^[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}-[0-9]{2}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]{4}_[0-9]
